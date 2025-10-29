@@ -1,0 +1,13 @@
+{
+    "default": {
+        "formatOptions": {
+            "colorsEnabled": true,
+            "snippetInterface": "async-await"
+        },
+        "paths":[ "src/test/features"],
+        "require": [ "src/test/steps/*.js" ]
+    },
+    "publishQuiet": true,
+    "dryRun": true,
+    "requireModule": [ "ts-node/register" ]
+}
