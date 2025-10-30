@@ -1,13 +1,17 @@
 {
-    "default": {
-        "formatOptions": {
-            "colorsEnabled": true,
-            "snippetInterface": "async-await"
-        },
-        "paths":[ "src/test/features"],
-        "require": [ "src/test/steps/*.js" ]
+  "default": {
+    "formatOptions": {
+      "colorsEnabled": true,
+      "snippetInterface": "async-await"
     },
-    "publishQuiet": true,
-    "dryRun": true,
-    "requireModule": [ "ts-node/register" ]
+    "paths": ["src/test/features"],
+    "require": ["src/test/steps/*.js"],
+    "requireModule": ["ts-node/register"],
+    "format": [
+      "progress-bar",
+      "json:./test-results/cucumber-report.json",
+      "html:./test-results/cucumber-html-report.html"
+    ],
+    "publishQuiet": true
+  }
 }

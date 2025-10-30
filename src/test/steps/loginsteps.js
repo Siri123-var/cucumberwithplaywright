@@ -1,5 +1,7 @@
-import { Given, When, Then,setDefaultTimeout} from '@cucumber/cucumber';
+import { Given, When, Then,setDefaultTimeout,BeforeAll} from '@cucumber/cucumber';
 import { chromium } from 'playwright';
+import fs from 'fs';
+import path from 'path';
 
 let browser, context, page;
 
@@ -23,6 +25,33 @@ async function closeBrowserIfOpen() {
     page = null;
   }
 }
+
+// screenshots folder (project-root/artifacts/screenshots)
+const SCREENSHOT_DIR = path.join(process.cwd(), 'artifacts', 'screenshots');
+
+function ensureScreenshotDir() {
+  // remove existing artifacts folder and recreate (cleans from previous run)
+  if (fs.existsSync(SCREENSHOT_DIR)) {
+    try { fs.rmSync(SCREENSHOT_DIR, { recursive: true, force: true }); } catch (e) { /* ignore */ }
+  }
+  fs.mkdirSync(SCREENSHOT_DIR, { recursive: true });
+}
+
+BeforeAll(async function () {
+  ensureScreenshotDir();
+});
+
+async function saveScreenshot(filename) {
+  if (!page) {
+    // ensure page exists before trying to screenshot
+    page = await startBrowserIfNeeded();
+  }
+  const filePath = path.join(SCREENSHOT_DIR, filename);
+  await page.screenshot({ path: filePath }).catch(() => {});
+  return filePath;
+}
+
+
 Given('I open the login page', async function () {
   page = await startBrowserIfNeeded();
   await page.goto('https://practice.qabrains.com/ecommerce/login', { waitUntil: 'networkidle' });
@@ -48,7 +77,9 @@ When('I login with {string} and {string}', async function (email, password) {
 Then('I should see the dashboard', async function () {
   await page.waitForTimeout(1000);
   await page.locator('//a[@class="inline-flex items-end gap-1"]').waitFor({ state: 'visible', timeout: 7000 });
-  await page.screenshot({ path: 'dashboard.png' });
+  // await page.screenshot({ path: 'dashboard.png' });
+  await saveScreenshot('dashboard.png');
+ 
 
 });
  
@@ -110,7 +141,8 @@ Then('I should see the products in the cart', async function () {
     console.log(`Total products in cart: ${names.length}`);
   }
 
-          await page.screenshot({ path: 'cart.png' });
+          // await page.screenshot({ path: 'cart.png' });
+          await saveScreenshot('cart.png');
         });
 
 When('I proceed to checkout', async function () {
@@ -121,13 +153,14 @@ When('I proceed to checkout', async function () {
 
 Then('I should fill the checkout page and proceed to continue', async function () {
            await page.waitForURL('https://practice.qabrains.com/ecommerce/checkout-info', { timeout: 10000 });
-           await page.screenshot({ path: 'checkout.png' });
+          //  await page.screenshot({ path: 'checkout.png' });
            await page.getByPlaceholder('Ex. John').fill('John Doe');
            await page.getByPlaceholder('Ex. Doe').fill('Doe');
           await page.locator("//input[@value='1207']").click();  // or .fill(), .check(), etc.
           await page.getByRole('button', { name: 'Continue' }).click();
 
-           await page.screenshot({ path: 'checkout-filled.png' });
+          //  await page.screenshot({ path: 'checkout-filled.png' });
+           await saveScreenshot('checkout-filled.png');
          });
 
     When('I complete the purchase', async function () {
@@ -167,6 +200,8 @@ Then('I should fill the checkout page and proceed to continue', async function (
   Then('I should proceed with the finish button', async function () {
            // Write code here that turns the phrase above into concrete actions
            await page.getByRole('button', { name: 'Finish' }).click();
-            await page.screenshot({ path: 'final-step.png' });
+            // await page.screenshot({ path: 'final-step.png' });
+            await saveScreenshot('final-step.png');
+            await browser.close();
 
          });
