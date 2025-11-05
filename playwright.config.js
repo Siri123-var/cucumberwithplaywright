@@ -1,7 +1,7 @@
 // @ts-check
 import { defineConfig, devices } from '@playwright/test';
 
-/**
+/*
  * Read environment variables from file.
  * https://github.com/motdotla/dotenv
  */
@@ -23,7 +23,7 @@ export default defineConfig({
   /* Opt out of parallel tests on CI. */
   workers: process.env.CI ? 1 : undefined,
   /* Reporter to use. See https://playwright.dev/docs/test-reporters */
-  reporter: 'html',
+  reporter: [['html'], ['dot'], ['json', { outputFile: "test-results.json" }], ['experimental-allure-playwright']],
   /* Shared settings for all the projects below. See https://playwright.dev/docs/api/class-testoptions. */
   use: {
     /* Base URL to use in actions like `await page.goto('/')`. */
@@ -37,18 +37,23 @@ export default defineConfig({
   projects: [
     {
       name: 'chromium',
-      use: { ...devices['Desktop Chrome'] },
-    },
+      expect: {
+        timeout: 70000 // 70 seconds
+      },
+      use: {
+        ...devices['Desktop Chrome'],
+        headless: false,
+        slowMo: 9000, // 9 seconds per action, adjust as needed
+        viewport: { width: 1280, height: 720 },
+        video: 'on',
+        trace: 'on-first-retry',
+        screenshot: 'only-on-failure',
 
-    {
-      name: 'firefox',
-      use: { ...devices['Desktop Firefox'] },
-    },
 
-    {
-      name: 'webkit',
-      use: { ...devices['Desktop Safari'] },
+      },
     },
+    // You can add firefox/webkit projects here if needed
+  ],
 
     /* Test against mobile viewports. */
     // {
@@ -69,7 +74,7 @@ export default defineConfig({
     //   name: 'Google Chrome',
     //   use: { ...devices['Desktop Chrome'], channel: 'chrome' },
     // },
-  ],
+  
 
   /* Run your local dev server before starting the tests */
   // webServer: {

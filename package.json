@@ -3,10 +3,11 @@
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
- "scripts": {
-  "test": "cucumber-js --config \"cucumber.json\" --format json:./test-results/cucumber-report.json",
-  "posttest": "npx ts-node src\\test\\helper\\report.ts"
-},
+  "scripts": {
+    "test": "cucumber-js --config \"cucumber.json\" --format json:./test-results/cucumber-report.json",
+    "report": "npx ts-node src\\test\\helper\\report.js",
+    "test:ci": "npm run test && npm run report"
+  },
   "keywords": [],
   "author": "",
   "license": "ISC",
@@ -15,6 +16,7 @@
     "@playwright/test": "^1.56.1",
     "@types/node": "^24.9.2",
     "multiple-cucumber-html-reporter": "^3.9.3",
+    "rimraf": "^6.1.0",
     "ts-node": "^10.9.2"
   }
 }
