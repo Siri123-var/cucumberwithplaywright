@@ -65,7 +65,7 @@ pipeline {
     post {
         always {
             // Archive artifacts
-            archiveArtifacts artifacts: 'artifacts/**/*', fingerprint: true
+            // archiveArtifacts artifacts: 'artifacts/**/*', fingerprint: true
             
             // Publish HTML report
             publishHTML([
