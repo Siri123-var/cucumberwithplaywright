@@ -1,13 +1,8 @@
 pipeline {
     agent any
     
-    tools {
-        nodejs 'NodeJS'  // Make sure this matches your Jenkins NodeJS installation name
-    }
-    
     environment {
         // Customize these if needed
-        NODE_VERSION = '18.x'
         SCREENSHOT_DIR = 'artifacts/screenshots'
         REPORT_DIR = 'artifacts/cucumber-report'
     }
@@ -20,11 +15,15 @@ pipeline {
             }
         }
         
-        stage('Install Dependencies') {
+        stage('Setup Node.js') {
             steps {
-                sh 'npm install'
-                // Install Playwright browsers
-                sh 'npx playwright install chromium'
+                script {
+                    // For Windows
+                    bat 'npm config ls'
+                    bat 'npm install'
+                    // Install Playwright browsers
+                    bat 'npx playwright install chromium'
+                }
             }
         }
         
@@ -32,11 +31,13 @@ pipeline {
             steps {
                 script {
                     try {
-                        // Create artifacts directories
-                        sh 'mkdir -p test-results artifacts/screenshots artifacts/cucumber-report'
+                        // Create artifacts directories (using Windows commands)
+                        bat 'if not exist test-results mkdir test-results'
+                        bat 'if not exist artifacts\\screenshots mkdir artifacts\\screenshots'
+                        bat 'if not exist artifacts\\cucumber-report mkdir artifacts\\cucumber-report'
                         
                         // Run Cucumber tests
-                        sh 'npm run test'
+                        bat 'npm run test'
                     } catch (err) {
                         currentBuild.result = 'UNSTABLE'
                         echo "Tests failed but continuing to generate reports..."
@@ -49,16 +50,13 @@ pipeline {
             steps {
                 script {
                     // Generate Cucumber HTML report
-                    sh 'npm run report'
+                    bat 'npm run report'
                     
                     // Publish Cucumber reports
                     cucumber buildStatus: 'UNSTABLE',
                             reportTitle: 'Cucumber Report',
                             fileIncludePattern: '**/cucumber-report.json',
                             jsonReportDirectory: 'test-results'
-                            
-                    // Archive artifacts
-                    archiveArtifacts artifacts: 'artifacts/**/*', fingerprint: true
                 }
             }
         }
@@ -66,7 +64,10 @@ pipeline {
     
     post {
         always {
-            // Clean up and publish test results
+            // Archive artifacts
+            archiveArtifacts artifacts: 'artifacts/**/*', fingerprint: true
+            
+            // Publish HTML report
             publishHTML([
                 allowMissing: false,
                 alwaysLinkToLastBuild: true,
