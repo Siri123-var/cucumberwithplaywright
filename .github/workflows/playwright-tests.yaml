@@ -2,16 +2,21 @@ name: Playwright Cucumber Tests
 
 on:
   push:
-    branches: [ main ]  # Runs on every push to main branch
+    branches: [ main ]
   pull_request:
-    branches: [ main ]  # Runs on PRs targeting main branch
+    branches: [ main ]
   schedule:
-    - cron: '0 11 * * *'  # Runs every day at 11:00 AM UTC
-  workflow_dispatch:  # Allows manual trigger from GitHub UI
+    - cron: '0 11 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: write # This gives write permission to GitHub Actions
+  pages: write
+  id-token: write
 
 jobs:
   test:
-    runs-on: windows-latest  # Using Windows runner since your tests use Windows commands
+    runs-on: windows-latest
 
     env:
       SCREENSHOT_DIR: artifacts/screenshots
@@ -20,6 +25,8 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -30,49 +37,63 @@ jobs:
       - name: Install dependencies
         run: |
           npm config ls
-          npm ci  # More reliable than npm install in CI environments
-          npx playwright install chromium
+          npm ci
+        shell: pwsh
 
-      - name: Create artifacts directories
+      - name: Install Playwright
+        run: npx playwright install chromium
+        shell: pwsh
+
+      - name: Create directories
         run: |
-          mkdir -p test-results
-          mkdir -p artifacts/screenshots
-          mkdir -p artifacts/cucumber-report
-        shell: pwsh  # Using PowerShell for better cross-platform support
+          Remove-Item -Path "test-results" -Recurse -Force -ErrorAction Ignore
+          Remove-Item -Path "artifacts" -Recurse -Force -ErrorAction Ignore
+          New-Item -Path "test-results" -ItemType Directory -Force
+          New-Item -Path "artifacts/screenshots" -ItemType Directory -Force
+          New-Item -Path "artifacts/cucumber-report" -ItemType Directory -Force
+        shell: pwsh
 
       - name: Run tests
         run: npm run test
-        continue-on-error: true  # Similar to your Jenkins try-catch
+        continue-on-error: true
+        shell: pwsh
 
       - name: Generate report
         run: npm run report
         continue-on-error: true
+        shell: pwsh
 
       - name: Upload test results
-        uses: actions/upload-artifact@v4  # Updated to v4
-        if: always()  # Upload even if tests fail
+        uses: actions/upload-artifact@v4
+        if: always()
         with:
           name: test-results
           path: |
             test-results/
             artifacts/
           retention-days: 30
-          compression-level: 9  # New in v4, maximum compression
+          compression-level: 9
 
-      - name: Deploy report to GitHub Pages
-        if: always()
+      - name: Deploy to GitHub Pages
+        if: github.ref == 'refs/heads/main'
         uses: peaceiris/actions-gh-pages@v3
         with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
+          personal_token: ${{ secrets.GITHUB_TOKEN }}
           publish_dir: ./artifacts/cucumber-report
           destination_dir: reports/${{ github.run_number }}
+          enable_jekyll: false
+          allow_empty_commit: true
+          force_orphan: true
+          commit_message: "Deploy test report for run ${{ github.run_number }}"
+          user_name: 'github-actions[bot]'
+          user_email: 'github-actions[bot]@users.noreply.github.com'
 
   notify:
     needs: test
     runs-on: ubuntu-latest
     if: always()
     steps:
-      - name: Send notification
+      - name: Check test status
         if: always()
         uses: actions/github-script@v7
         with:
@@ -88,12 +109,13 @@ jobs:
             Workflow: ${context.workflow}
             
             View Results: https://github.com/${owner}/${repo}/actions/runs/${run_id}
-            View Report: https://${owner}.github.io/${repo}/reports/${run_number}/
             `;
             
-            github.rest.issues.createComment({
-              owner,
-              repo,
-              issue_number: context.issue.number,
-              body: summary
-            }).catch(console.error);  // Only works on PR or issues
+            if (context.issue.number) {
+              await github.rest.issues.createComment({
+                owner,
+                repo,
+                issue_number: context.issue.number,
+                body: summary
+              });
+            }
