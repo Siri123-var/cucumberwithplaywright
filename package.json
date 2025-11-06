@@ -3,6 +3,9 @@
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
+   "engines": {
+    "node": ">=20.0.0"
+  },
   "scripts": {
     "test": "cucumber-js --config \"cucumber.json\" --format json:./test-results/cucumber-report.json",
     "report": "npx ts-node src\\test\\helper\\report.js",
