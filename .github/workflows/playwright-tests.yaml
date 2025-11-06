@@ -17,13 +17,7 @@ permissions:
 jobs:
   test:
     runs-on: windows-latest
-    steps:
-      - name: Check workflow trigger and time
-        run: |
-          echo "Workflow triggered by: ${{ github.event_name }}"
-          echo "Current UTC time: $(Get-Date -Format 'yyyy-MM-dd HH:mm:ss')"
-          echo "Schedule should run at: 16:30 UTC"
-        shell: pwsh
+    
 
     env:
       SCREENSHOT_DIR: artifacts/screenshots
@@ -109,3 +103,9 @@ jobs:
           commit_message: "Deploy test report for run ${{ github.run_number }}"
           user_name: 'github-actions[bot]'
           user_email: 'github-actions[bot]@users.noreply.github.com'
+      - name: Check workflow trigger and time
+        run: |
+          echo "Workflow triggered by: ${{ github.event_name }}"
+          echo "Current UTC time: $(Get-Date -Format 'yyyy-MM-dd HH:mm:ss')"
+          echo "Schedule should run at: 15:45 UTC"
+        shell: pwsh
