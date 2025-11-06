@@ -6,7 +6,7 @@ on:
   pull_request:
     branches: [ main ]
   schedule:
-    - cron: '30 16 * * *'
+    - cron: '45 15 * * *'
   workflow_dispatch:
 
 permissions:
@@ -17,6 +17,13 @@ permissions:
 jobs:
   test:
     runs-on: windows-latest
+    steps:
+      - name: Check workflow trigger and time
+        run: |
+          echo "Workflow triggered by: ${{ github.event_name }}"
+          echo "Current UTC time: $(Get-Date -Format 'yyyy-MM-dd HH:mm:ss')"
+          echo "Schedule should run at: 16:30 UTC"
+        shell: pwsh
 
     env:
       SCREENSHOT_DIR: artifacts/screenshots
