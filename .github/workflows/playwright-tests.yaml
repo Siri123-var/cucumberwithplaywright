@@ -1,0 +1,98 @@
+name: Playwright Cucumber Tests
+
+on:
+  push:
+    branches: [ main ]  # Runs on every push to main branch
+  pull_request:
+    branches: [ main ]  # Runs on PRs targeting main branch
+  schedule:
+    - cron: '0 11 * * *'  # Runs every day at 11:00 AM UTC
+  workflow_dispatch:  # Allows manual trigger from GitHub UI
+
+jobs:
+  test:
+    runs-on: windows-latest  # Using Windows runner since your tests use Windows commands
+
+    env:
+      SCREENSHOT_DIR: artifacts/screenshots
+      REPORT_DIR: artifacts/cucumber-report
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: |
+          npm config ls
+          npm ci  # More reliable than npm install in CI environments
+          npx playwright install chromium
+
+      - name: Create artifacts directories
+        run: |
+          mkdir -p test-results
+          mkdir -p artifacts/screenshots
+          mkdir -p artifacts/cucumber-report
+        shell: pwsh  # Using PowerShell for better cross-platform support
+
+      - name: Run tests
+        run: npm run test
+        continue-on-error: true  # Similar to your Jenkins try-catch
+
+      - name: Generate report
+        run: npm run report
+        continue-on-error: true
+
+      - name: Upload test results
+        uses: actions/upload-artifact@v3
+        if: always()  # Upload even if tests fail
+        with:
+          name: test-results
+          path: |
+            test-results/
+            artifacts/
+          retention-days: 30
+
+      - name: Deploy report to GitHub Pages
+        if: always()
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./artifacts/cucumber-report
+          destination_dir: reports/${{ github.run_number }}
+
+  notify:
+    needs: test
+    runs-on: ubuntu-latest
+    if: always()
+    steps:
+      - name: Send notification
+        if: always()
+        uses: actions/github-script@v6
+        with:
+          script: |
+            const { owner, repo } = context.repo;
+            const run_id = context.runId;
+            const run_number = context.runNumber;
+            
+            const summary = `
+            🎭 Playwright Test Run #${run_number}
+            
+            Status: ${context.job.status}
+            Workflow: ${context.workflow}
+            
+            View Results: https://github.com/${owner}/${repo}/actions/runs/${run_id}
+            View Report: https://${owner}.github.io/${repo}/reports/${run_number}/
+            `;
+            
+            github.rest.issues.createComment({
+              owner,
+              repo,
+              issue_number: context.issue.number,
+              body: summary
+            }).catch(console.error);  // Only works on PR or issues
