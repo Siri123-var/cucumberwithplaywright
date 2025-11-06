@@ -53,15 +53,32 @@ jobs:
           New-Item -Path "artifacts/cucumber-report" -ItemType Directory -Force
         shell: pwsh
 
+      # - name: Run tests
+      #   run: npm run test
+      #   continue-on-error: true
+      #   shell: pwsh
+
+      # - name: Generate report
+      #   run: npm run report
+      #   continue-on-error: true
+      #   shell: pwsh
       - name: Run tests
-        run: npm run test
-        continue-on-error: true
+        run: |
+          cucumber-js --config cucumber.json --format json:test-results/cucumber-report.json --format summary
+          echo "Test execution completed"
+          dir test-results
+          type test-results\cucumber-report.json
         shell: pwsh
+        continue-on-error: true
 
       - name: Generate report
-        run: npm run report
-        continue-on-error: true
+        run: |
+          echo "Generating report..."
+          node src/test/helper/report.js
+          echo "Report generation completed"
+          dir artifacts\cucumber-report
         shell: pwsh
+        continue-on-error: true
 
       - name: Upload test results
         uses: actions/upload-artifact@v4
