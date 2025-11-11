@@ -7,9 +7,11 @@
     "node": ">=20.0.0"
   },
   "scripts": {
-    "test": "cucumber-js --config \"cucumber.json\" --format json:./test-results/cucumber-report.json",
-    "report": "npx ts-node src\\test\\helper\\report.js",
-    "test:ci": "npm run test && npm run report"
+    "clean:results": "rimraf test-results artifacts",
+    "test:cucumber": "cucumber-js --require src/test/steps --format progress-bar --format json:./test-results/cucumber-report.json",
+    "test": "npm run test:cucumber",
+    "report": "node src/test/helper/generate_report.js",
+    "test:ci": "npm run clean:results && npm run test && npm run report"
   },
   "keywords": [],
   "author": "",
