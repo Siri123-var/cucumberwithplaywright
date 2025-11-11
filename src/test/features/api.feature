@@ -20,6 +20,6 @@ Feature: API tests for automationexercise
   Scenario: VerifyLogin valid credentials
     When I POST "/api/verifyLogin" with form:
       | email    | varshu@gmail.com |
-      | password | varshu@123      |
+      | password | varshu@1234      |
     Then the response status should be 200
     And the JSON response field "message" should equal "User exists!"
